@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const apiToken = process.env.NEXT_PUBLIC_CLOUDFLARE_API_TOKEN;
 
     const response = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`,
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/meta/llama-3.1-8b-instruct-fp8`,
       {
         method: 'POST',
         headers: {
@@ -32,6 +32,8 @@ export async function POST(req: NextRequest) {
                 LC_EXPIRY_PLACE (string), TRANSHIPMENT_YN (Y/N), PARTIAL_YN (Y/N), COUNTRY (string), DEST_COUNTRY (string),
                 BANK_REFNO (string), LOAD_ID (integer), Entry Date (string), Final Y/N (Y/N)
               - Extract all possible information from the text and format it according to the schema
+              - The <LC_DATE> and <Entry_Date> tags always need to have the Date of Issue found in the text provided below in the format YYYY-MM-DD
+              - The <Final Y> tag always needs to have a children tag <N>Y</N>, but don't repeat the <N> tag
               - If a value is not found in the text, use appropriate default values (0 for numbers, empty string for text)
               - Ensure the XML is well-formed and validates against the schema`,
             },
