@@ -1,7 +1,6 @@
 // src/utils/llm-processor.ts
 export async function processWithLLM(text: string): Promise<string> {
   try {
-    // posting request to google gemini ai
     const response = await fetch('/api/cloudflare', {
       method: 'POST',
       headers: {
@@ -14,13 +13,16 @@ export async function processWithLLM(text: string): Promise<string> {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    // Parse the JSON response and extract the response field
     const responseBody = await response.json();
-    // console.log(`[Chat] Response: ${responseBody.response}`);
+    
+    // Validate XML response
+    if (!responseBody.response || typeof responseBody.response !== 'string') {
+      throw new Error('Invalid response format from AI');
+    }
 
-    return responseBody.response || 'No response generated';
+    return responseBody.response;
   } catch (error) {
-    console.error('Error processing with Google Gemini AI:', error);
-    return 'An error occurred while processing the text';
+    console.error('Error processing with Cloudflare AI:', error);
+    throw new Error('Failed to convert text to XML format');
   }
 }
