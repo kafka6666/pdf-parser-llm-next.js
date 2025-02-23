@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    
+    <xs:element name="root">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="row" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="LCAF_ID" type="xs:integer"/>
+                            <xs:element name="LC_ID" type="xs:string"/>
+                            <xs:element name="ADSCODE" type="xs:string"/>
+                            <xs:element name="LC_YEAR" type="xs:string"/>
+                            <xs:element name="LC_NATURE" type="xs:string"/>
+                            <xs:element name="LC_SERIAL" type="xs:string"/>
+                            <xs:element name="LC_DATE" type="xs:string"/>
+                            <xs:element name="CURRENCY" type="xs:string"/>
+                            <xs:element name="LC_AMOUNT" type="xs:decimal"/>
+                            <xs:element name="LC_EXPIRY_DATE" type="xs:string"/>
+                            <xs:element name="LC_EXPIRY_PLACE" type="xs:string"/>
+                            <xs:element name="TRANSHIPMENT_YN">
+                                <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                        <xs:enumeration value="Y"/>
+                                        <xs:enumeration value="N"/>
+                                    </xs:restriction>
+                                </xs:simpleType>
+                            </xs:element>
+                            <xs:element name="PARTIAL_YN">
+                                <xs:simpleType>
+                                    <xs:restriction base="xs:string">
+                                        <xs:enumeration value="Y"/>
+                                        <xs:enumeration value="N"/>
+                                    </xs:restriction>
+                                </xs:simpleType>
+                            </xs:element>
+                            <xs:element name="COUNTRY" type="xs:string"/>
+                            <xs:element name="DEST_COUNTRY" type="xs:string"/>
+                            <xs:element name="BANK_REFNO" type="xs:string"/>
+                            <xs:element name="LOAD_ID" type="xs:integer"/>
+                            <xs:element name="Entry Date" type="xs:string"/>
+                            <xs:element name="Final Y">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="N">
+                                            <xs:simpleType>
+                                                <xs:restriction base="xs:string">
+                                                    <xs:enumeration value="Y"/>
+                                                    <xs:enumeration value="N"/>
+                                                </xs:restriction>
+                                            </xs:simpleType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    
+</xs:schema>
