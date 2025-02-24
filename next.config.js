@@ -2,7 +2,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   turbo: true,
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        'file-uri-to-path': false
+      };
+    }
     config.resolve.alias = {
       ...config.resolve.alias,
       'pdfjs-dist': 'pdfjs-dist/legacy/build/pdf.js',
@@ -11,4 +19,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

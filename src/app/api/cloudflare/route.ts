@@ -25,21 +25,44 @@ export async function POST(req: NextRequest) {
           messages: [
             {
               role: 'system',
-              content: `You are an assistant that converts text data into XML format. You should structure the data according to the following XML schema:
-              - Each record should be wrapped in a <row> tag within a <root> tag
-              - Required fields: LCAF_ID (integer), LC_ID (string), ADSCODE (string), LC_YEAR (string), LC_NATURE (string), 
-                LC_SERIAL (string), LC_DATE (string), CURRENCY (string), LC_AMOUNT (decimal), LC_EXPIRY_DATE (string),
-                LC_EXPIRY_PLACE (string), TRANSHIPMENT_YN (Y/N), PARTIAL_YN (Y/N), COUNTRY (string), DEST_COUNTRY (string),
-                BANK_REFNO (string), LOAD_ID (integer), Entry Date (string), Final Y/N (Y/N)
-              - Extract all possible information from the text and format it according to the schema
-              - The <LC_DATE> and <Entry_Date> tags always need to have the Date of Issue found in the text provided below in the format YYYY-MM-DD
-              - The <Final Y> tag always needs to have a children tag <N>Y</N>, but don't repeat the <N> tag
-              - If a value is not found in the text, use appropriate default values (0 for numbers, empty string for text)
-              - Ensure the XML is well-formed and validates against the schema`,
+              content: `You are a precise data extraction assistant that converts text into XML format. Follow these strict rules:
+
+              1. ONLY extract information that is explicitly present in the input text
+              2. For any field where information is not found in the text:
+                 - Use "0" for numeric fields (LCAF_ID, LC_AMOUNT, LOAD_ID)
+                 - Use "N/A" for string fields
+                 - Use "N" for Y/N fields (TRANSHIPMENT_YN, PARTIAL_YN)
+              3. DO NOT make assumptions or generate data that isn't in the source text
+              4. If a date is found, maintain its exact format as present in the text
+              5. For currency amounts, extract only explicit numeric values
+              6. Format rules:
+                 - LCAF_ID must be a valid integer
+                 - LC_AMOUNT must be a decimal number
+                 - LOAD_ID must be a valid integer
+                 - Y/N fields must only contain "Y" or "N"
+
+              XML Schema Requirements:
+              <root>
+                <row>
+                  - Each record should be wrapped in a <row> tag within a <root> tag
+                  - Required fields: LCAF_ID (integer), LC_ID (string), ADSCODE (string), LC_YEAR (string), LC_NATURE (string), 
+                    LC_SERIAL (string), LC_DATE (string), CURRENCY (string), LC_AMOUNT (decimal), LC_EXPIRY_DATE (string),
+                    LC_EXPIRY_PLACE (string), TRANSHIPMENT_YN (Y/N), PARTIAL_YN (Y/N), COUNTRY (string), DEST_COUNTRY (string),
+                    BANK_REFNO (string), LOAD_ID (integer), Entry Date (string), Final Y/N (Y/N)
+                  - Extract all possible information from the text and format it according to the schema
+                  - The <LC_DATE> and <Entry_Date> tags always need to have the Date of Issue found in the text provided below in the format YYYY-MM-DD
+                  - The <Final Y> tag always needs to have a children tag <N>Y</N>, but don't repeat the <N> tag
+                  - Ensure each and every <row> tag has a closing </row> tag
+                  - If a value is not found in the text, use appropriate default values (0 for numbers, empty string for text)
+                  - Ensure the XML is well-formed and validates against the schema
+                </row>
+              </root>
+
+              If you're unsure about any value, use the default values mentioned above instead of guessing.`,
             },
             {
               role: 'user',
-              content: `Convert the following text into XML format according to the specified schema:\n\n${text}`,
+              content: `Extract ONLY the factual information present in this text and convert to XML. Do not add any information that is not explicitly stated:\n\n${text}`,
             },
           ],
         }),
@@ -82,16 +105,34 @@ export async function POST(req: NextRequest) {
     }
 
     // Clean up markdown code blocks
-    xmlResponse = xmlResponse.replace(/```xml\n?/g, '');
-    xmlResponse = xmlResponse.replace(/```\n?/g, '');
-    xmlResponse = xmlResponse.trim();
+    // xmlResponse = xmlResponse.replace(/```xml\n?/g, '');
+    // xmlResponse = xmlResponse.replace(/```\n?/g, '');
+    // xmlResponse = xmlResponse.trim();
 
-    // Complete any incomplete tags
-    if (xmlResponse.includes('<LOAD') && !xmlResponse.includes('</LOAD>')) {
-      xmlResponse = xmlResponse.replace(/<LOAD[^>]*>/g, '<LOAD_ID>938807</LOAD_ID>');
+    // Fix LOAD_ID tag to remove duplicates and ensure proper format
+    if (xmlResponse.includes('<LOAD')) {
+      // First, clean up any malformed LOAD_ID tags
+      xmlResponse = xmlResponse.replace(/<LOAD_ID>[^<]*<\/LOAD_ID>[^<]*<\/LOAD_ID>/, '<LOAD_ID>0</LOAD_ID>');
+      // Then ensure the tag exists with proper format
+      if (!xmlResponse.includes('</LOAD_ID>')) {
+        xmlResponse = xmlResponse.replace(/<LOAD[^>]*>/, '<LOAD_ID>0</LOAD_ID>');
+      }
     }
-    if (xmlResponse.includes('<Final') && !xmlResponse.includes('</Final>')) {
-      xmlResponse = xmlResponse.replace(/<Final[^>]*>/g, '<Final Y><N>N</N></Final Y>');
+    
+    // Handle Final Y tag with proper closing
+    if (xmlResponse.includes('<Final Y>') && !xmlResponse.includes('</Final Y>')) {
+      xmlResponse = xmlResponse.replace(/<Final Y>[^<]*<\/Final>|<Final Y>[^<]*(?=<|$)/, '<Final Y><N>Y</N></Final Y>');
+    } else if (!xmlResponse.includes('<Final Y>')) {
+      xmlResponse = xmlResponse.replace(/(<\/row>)/, '<Final Y><N>Y</N></Final Y>$1');
+    }
+
+    // Ensure Entry_Date tag is properly closed with today's date if incomplete
+    if (xmlResponse.includes('<Entry_Date>') && !xmlResponse.includes('</Entry_Date>')) {
+      const today = new Date().toISOString().split('T')[0];  // Format: YYYY-MM-DD
+      xmlResponse = xmlResponse.replace(/<Entry_Date>[^<]*/, `<Entry_Date>${today}`);
+      if (!xmlResponse.includes('</Entry_Date>')) {
+        xmlResponse = xmlResponse.replace(/(<Entry_Date>[^<]*?)(?=<|$)/, `$1</Entry_Date>`);
+      }
     }
 
     // Ensure root tag is properly closed if needed
